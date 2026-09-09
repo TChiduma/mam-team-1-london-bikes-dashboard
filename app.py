@@ -551,7 +551,17 @@ def render_tab_content(selected_tab):
                         className="kpi-stat-card",
                         children=[
                             html.Div("ACTIVE REGRESSION MODEL", className="kpi-label"),
-                            html.Div("Deployable variant (R² 0.710)", className="kpi-value", style={"color": BRAND["mint"]}),
+                            html.Div(
+                                "Deployable variant (R² 0.710)",
+                                className="kpi-value",
+                                style={
+                                    "color": BRAND["mint"],
+                                    "fontSize": "16.5px",
+                                    "fontFamily": "Outfit, sans-serif",
+                                    "fontWeight": "800",
+                                    "whiteSpace": "nowrap",
+                                },
+                            ),
                             html.Div("23-coefficient linear scoring formula", className="kpi-sub"),
                         ],
                     ),
