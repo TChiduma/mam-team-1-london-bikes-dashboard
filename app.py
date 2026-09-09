@@ -163,43 +163,45 @@ def load_model_coefficients(filepath="model_coefficients.csv"):
         if os.path.exists(p):
             return pd.read_csv(p)
 
-    # Model F fallback from MAM_Team_1_Final_Group_Project.ipynb
+    # Model F fallback from model_coefficients.csv
     return pd.DataFrame([
-        ("Intercept", 31811.53),
-        ("temp_c", 634.35),
-        ("humidity", -49.24),
-        ("log_precip", -2492.66),
-        ("windspeed", -168.06),
-        ("solarradiation", 29.58),
-        ("visibility", 117.15),
-        ("sin_doy", -1434.25),
-        ("temp_wknd", 238.31),
-        ("rain_wknd", -741.53),
-        ("covid", -536.29),
-        ("xmas", -8340.91),
-        ("post2023", -2563.89),
-        ("p_temp_c", -393.50),
-        ("p_temp_c2", -16.95),
-        ("p_log_precip", 1150.26),
-        ("p_visibility", -98.65),
+        ("Intercept", 42049.03),
+        ("temp_c", 614.78),
+        ("temp_c2", -11.21),
+        ("humidity", -51.29),
+        ("log_precip", -2851.67),
+        ("windspeed", -121.93),
+        ("cloudcover", -73.87),
+        ("sin_doy", -1011.60),
+        ("cos_doy", -2834.27),
+        ("temp_wknd", 222.45),
+        ("rain_wknd", -734.85),
+        ("xmas", -8073.41),
+        ("post2023", -9874.11),
+        ("p_temp_c", -496.66),
+        ("p_log_precip", 1298.01),
+        ("p_cloudcover", 55.79),
         ("day_Mon", 0.0),
-        ("day_Tue", 2281.19),
-        ("day_Wed", 2545.16),
-        ("day_Thu", 2444.86),
-        ("day_Fri", 799.59),
-        ("day_Sat", -898.91),
-        ("day_Sun", -3247.00),
+        ("day_Tue", 2246.30),
+        ("day_Wed", 2487.45),
+        ("day_Thu", 2394.50),
+        ("day_Fri", 763.28),
+        ("day_Sat", -1017.08),
+        ("day_Sun", -3279.14),
     ], columns=["term", "coefficient"])
 
 COEFF_DESCRIPTIONS = {
     "Intercept": "Baseline expected daily hires (Monday pre-2023 reference)",
     "temp_c": "Mean daily temperature (°C) — warmer days boost hires",
+    "temp_c2": "Quadratic temperature curve (temp_c²) — comfort diminishes at extreme heat",
     "humidity": "Relative humidity (%) — damp/muggy conditions reduce rides",
     "log_precip": "Log precipitation log(1+mm) — rain sharply reduces demand",
     "windspeed": "Mean wind speed (km/h) — strong winds discourage cycling",
+    "cloudcover": "Mean cloud cover (%) — overcast skies reduce ride willingness",
     "solarradiation": "Solar radiation (W/m²) — sunny daylight encourages leisure rides",
     "visibility": "Atmospheric visibility (km) — clearer skies increase travel",
-    "sin_doy": "Annual seasonality cycle (sin(day of year))",
+    "sin_doy": "Annual seasonality sine cycle (sin(day of year))",
+    "cos_doy": "Annual seasonality cosine cycle (cos(day of year))",
     "temp_wknd": "Weekend temperature boost (leisure riders are sun-sensitive)",
     "rain_wknd": "Weekend rain penalty (discretionary weekend trips cancel when wet)",
     "covid": "Lockdown indicator — mobility reduction during pandemic restrictions",
@@ -208,6 +210,7 @@ COEFF_DESCRIPTIONS = {
     "p_temp_c": "Post-2023 temperature interaction (temp_c × post2023)",
     "p_temp_c2": "Post-2023 quadratic temperature curve (temp_c² × post2023)",
     "p_log_precip": "Post-2023 rain interaction (log_precip × post2023)",
+    "p_cloudcover": "Post-2023 cloud cover interaction (cloudcover × post2023)",
     "p_visibility": "Post-2023 visibility interaction (visibility × post2023)",
     "day_Mon": "Baseline reference day (Monday)",
     "day_Tue": "Tuesday commuter premium (relative to Monday)",
@@ -264,6 +267,8 @@ def prepare_weather_features(df):
         df["p_temp_c2"] = df["temp_c2"] * df["post2023"]
     if "p_log_precip" not in df.columns and "log_precip" in df.columns:
         df["p_log_precip"] = df["log_precip"] * df["post2023"]
+    if "p_cloudcover" not in df.columns and "cloudcover" in df.columns:
+        df["p_cloudcover"] = df["cloudcover"] * df["post2023"]
 
     if "visibility" not in df.columns:
         df["visibility"] = 24.0  # London average visibility
