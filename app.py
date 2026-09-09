@@ -270,15 +270,6 @@ def prepare_weather_features(df):
     if "p_cloudcover" not in df.columns and "cloudcover" in df.columns:
         df["p_cloudcover"] = df["cloudcover"] * df["post2023"]
 
-    if "visibility" not in df.columns:
-        df["visibility"] = 24.0  # London average visibility
-    if "p_visibility" not in df.columns:
-        df["p_visibility"] = df["visibility"] * df["post2023"]
-
-    if "solarradiation" not in df.columns:
-        # Seasonally accurate solar radiation for London: ~35 in winter, ~180 in summer
-        df["solarradiation"] = np.maximum(25.0, 100.0 - 70.0 * np.cos(2 * np.pi * doy / 365.25))
-
     return df
 
 def predict_bikes(weather_df, coeffs_df):
@@ -560,8 +551,8 @@ def render_tab_content(selected_tab):
                         className="kpi-stat-card",
                         children=[
                             html.Div("ACTIVE REGRESSION MODEL", className="kpi-label"),
-                            html.Div("Model F (R² 0.72)", className="kpi-value", style={"color": BRAND["mint"]}),
-                            html.Div("24-term linear scoring formula", className="kpi-sub"),
+                            html.Div("Deployable variant (R² 0.710)", className="kpi-value", style={"color": BRAND["mint"]}),
+                            html.Div("23-coefficient linear scoring formula", className="kpi-sub"),
                         ],
                     ),
                 ],
@@ -815,10 +806,11 @@ def render_tab_content(selected_tab):
             # Tile 6: Interactive "What-If" Demand Simulator (Executive Polish)
             html.Div(
                 className="dashboard-tile",
-                style={"paddingBottom": "38px"},
+                style={"paddingTop": "32px", "paddingBottom": "38px"},
                 children=[
                     html.Div(
                         className="tile-header",
+                        style={"marginBottom": "24px"},
                         children=[
                             html.Div([
                                 html.H3("3. Interactive 'What-If' Demand Simulator", className="tile-title", style={"color": BRAND["text_primary"]}),
@@ -830,6 +822,7 @@ def render_tab_content(selected_tab):
 
                     html.Div(
                         className="simulator-layout",
+                        style={"marginTop": "8px"},
                         children=[
                             # Left: All Simulation Controls (Day Bar + 2 Columns of 3 Sliders)
                             html.Div(
