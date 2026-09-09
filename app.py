@@ -935,7 +935,7 @@ def render_tab_content(selected_tab):
                                                 ]),
                                             ]),
 
-                                            # Column B: Atmospheric Factors (Wind, Solar, Visibility)
+                                            # Column B: Atmospheric & Seasonal Drivers (Wind, Cloud Cover, Season / Month)
                                             html.Div([
                                                 html.Div([
                                                     html.Div(
@@ -965,20 +965,21 @@ def render_tab_content(selected_tab):
                                                     html.Div(
                                                         style={"display": "flex", "justifyContent": "space-between", "marginBottom": "6px", "padding": "0 6px"},
                                                         children=[
-                                                            html.Label("Solar Radiation", className="control-label", style={"margin": "0"}),
-                                                            html.Span(id="sim-solar-display", style={"fontWeight": "700", "color": BRAND["amber"], "fontSize": "13px"}),
+                                                            html.Label("Cloud Cover", className="control-label", style={"margin": "0"}),
+                                                            html.Span(id="sim-cloud-display", style={"fontWeight": "700", "color": BRAND["text_secondary"], "fontSize": "13px"}),
                                                         ],
                                                     ),
                                                     html.Div(
                                                         style={"padding": "0 30px"},
                                                         children=[
                                                             dcc.Slider(
-                                                                id="sim-solar",
-                                                                min=0, max=250, step=5, value=80,
+                                                                id="sim-cloud",
+                                                                min=0, max=100, step=5, value=50,
                                                                 allow_direct_input=False,
                                                                 marks={
-                                                                    0: {"label": "0 W/m²", "style": {"color": "#FFFFFF", "fontWeight": "600", "fontSize": "11.5px"}},
-                                                                    250: {"label": "250 W/m²", "style": {"color": "#FFFFFF", "fontWeight": "600", "fontSize": "11.5px"}},
+                                                                    0: {"label": "0%", "style": {"color": "#FFFFFF", "fontWeight": "600", "fontSize": "11.5px"}},
+                                                                    50: {"label": "50%", "style": {"color": "#FFFFFF", "fontWeight": "600", "fontSize": "11.5px"}},
+                                                                    100: {"label": "100%", "style": {"color": "#FFFFFF", "fontWeight": "600", "fontSize": "11.5px"}},
                                                                 },
                                                             ),
                                                         ],
@@ -989,20 +990,23 @@ def render_tab_content(selected_tab):
                                                     html.Div(
                                                         style={"display": "flex", "justifyContent": "space-between", "marginBottom": "6px", "padding": "0 6px"},
                                                         children=[
-                                                            html.Label("Visibility", className="control-label", style={"margin": "0"}),
-                                                            html.Span(id="sim-vis-display", style={"fontWeight": "700", "color": BRAND["mint"], "fontSize": "13px"}),
+                                                            html.Label("Season / Month", className="control-label", style={"margin": "0"}),
+                                                            html.Span(id="sim-month-display", style={"fontWeight": "700", "color": BRAND["amber"], "fontSize": "13px"}),
                                                         ],
                                                     ),
                                                     html.Div(
                                                         style={"padding": "0 30px"},
                                                         children=[
                                                             dcc.Slider(
-                                                                id="sim-vis",
-                                                                min=5, max=40, step=1, value=24,
+                                                                id="sim-month",
+                                                                min=1, max=12, step=1, value=5,
                                                                 allow_direct_input=False,
                                                                 marks={
-                                                                    5: {"label": "5 km", "style": {"color": "#FFFFFF", "fontWeight": "600", "fontSize": "11.5px"}},
-                                                                    40: {"label": "40 km", "style": {"color": "#FFFFFF", "fontWeight": "600", "fontSize": "11.5px"}},
+                                                                    1: {"label": "Jan", "style": {"color": "#FFFFFF", "fontWeight": "600", "fontSize": "11.5px"}},
+                                                                    4: {"label": "Apr", "style": {"color": "#FFFFFF", "fontWeight": "600", "fontSize": "11.5px"}},
+                                                                    7: {"label": "Jul", "style": {"color": "#FFFFFF", "fontWeight": "600", "fontSize": "11.5px"}},
+                                                                    10: {"label": "Oct", "style": {"color": "#FFFFFF", "fontWeight": "600", "fontSize": "11.5px"}},
+                                                                    12: {"label": "Dec", "style": {"color": "#FFFFFF", "fontWeight": "600", "fontSize": "11.5px"}},
                                                                 },
                                                             ),
                                                         ],
@@ -1280,14 +1284,20 @@ def update_dow_bar_chart(_, start_date, end_date):
 # -----------------------------------------------------------------------------
 # Callbacks: What-If Demand Simulator
 # -----------------------------------------------------------------------------
+MONTH_NAMES = {
+    1: "Jan (Winter)", 2: "Feb (Winter)", 3: "Mar (Spring)", 4: "Apr (Spring)",
+    5: "May (Spring)", 6: "Jun (Summer)", 7: "Jul (Summer)", 8: "Aug (Summer)",
+    9: "Sep (Autumn)", 10: "Oct (Autumn)", 11: "Nov (Autumn)", 12: "Dec (Winter)"
+}
+
 @app.callback(
     [
         Output("sim-temp-display", "children"),
         Output("sim-precip-display", "children"),
         Output("sim-humidity-display", "children"),
         Output("sim-wind-display", "children"),
-        Output("sim-solar-display", "children"),
-        Output("sim-vis-display", "children"),
+        Output("sim-cloud-display", "children"),
+        Output("sim-month-display", "children"),
         Output("sim-prediction-value", "children"),
         Output("sim-status-chip", "children"),
     ],
@@ -1297,22 +1307,22 @@ def update_dow_bar_chart(_, start_date, end_date):
         Input("sim-precip", "value"),
         Input("sim-humidity", "value"),
         Input("sim-wind", "value"),
-        Input("sim-solar", "value"),
-        Input("sim-vis", "value"),
+        Input("sim-cloud", "value"),
+        Input("sim-month", "value"),
     ],
 )
-def update_simulator(day, temp, precip, humidity, wind, solar, vis):
+def update_simulator(day, temp, precip, humidity, wind, cloud, month):
     coeffs_df = load_model_coefficients()
+    m = int(month)
+    sim_date = pd.Timestamp(2026, m, 15)
     sim_row = pd.DataFrame([{
-        "date": pd.Timestamp.now().normalize(),
+        "date": sim_date,
         "day_of_week": day,
         "temp": float(temp),
         "precip": float(precip),
         "humidity": float(humidity),
         "windspeed": float(wind),
-        "solarradiation": float(solar),
-        "visibility": float(vis),
-        "cloudcover": 50.0,  # average cloud
+        "cloudcover": float(cloud),
     }])
     pred = predict_bikes(sim_row, coeffs_df)[0]
 
@@ -1331,8 +1341,8 @@ def update_simulator(day, temp, precip, humidity, wind, solar, vis):
         f"{precip} mm",
         f"{humidity}%",
         f"{wind} km/h",
-        f"{solar} W/m²",
-        f"{vis} km",
+        f"{cloud}%",
+        f"{MONTH_NAMES.get(m, str(m))}",
         f"{pred:,}",
         chip,
     )
@@ -1383,7 +1393,7 @@ def build_prediction_bar_chart(df, accent_color):
             orientation="h",
             marker=dict(
                 color=accent_color,
-                line=dict(color="rgba(255,255,255,0.2)", width=1),
+                line=dict(width=0),
             ),
             text=[f"{p:,}" for p in preds],
             textposition="outside",
@@ -1395,7 +1405,7 @@ def build_prediction_bar_chart(df, accent_color):
     layout_args = get_plotly_layout()
     # Top margin = 44px (matches 44px <th> header height of table!)
     # Bottom margin = 40px (for x-axis labels and tick numbers)
-    layout_args["margin"] = dict(l=85, r=65, t=44, b=40)
+    layout_args["margin"] = dict(l=92, r=70, t=44, b=40)
     fig.update_layout(
         **layout_args,
         height=chart_height,
@@ -1404,8 +1414,26 @@ def build_prediction_bar_chart(df, accent_color):
         yaxis_title="",
         showlegend=False,
     )
+    fig.update_yaxes(
+        showline=True,
+        linecolor=BRAND["border_highlight"],
+        linewidth=2,
+        layer="above traces",
+        gridcolor=BRAND["grid"],
+    )
     if preds:
-        fig.update_xaxes(range=[0, max(preds) * 1.25])
+        fig.update_xaxes(
+            range=[0, max(preds) * 1.28],
+            rangemode="tozero",
+            showline=True,
+            linecolor=BRAND["border_highlight"],
+            linewidth=1.5,
+            zeroline=True,
+            zerolinecolor=BRAND["border_highlight"],
+            zerolinewidth=2,
+            layer="above traces",
+            gridcolor=BRAND["grid"],
+        )
 
     return fig
 
